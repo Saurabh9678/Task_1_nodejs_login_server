@@ -30,24 +30,24 @@ exports.registerUser = catchAsyncError(async (req, res, next) => {
 
 // Login User
 exports.loginUser = catchAsyncError(async (req, res, next) => {
-  const { email, password } = req.body;
+  const { name, password } = req.body;
 
   // checking if user has given password and email both
 
-  if (!email || !password) {
-    return next(new ErrorHandler("Please Enter Email & Password", 400));
+  if (!name || !password) {
+    return next(new ErrorHandler("Please Enter Username & Password", 400));
   }
 
-  const user = await User.findOne({ email }).select("+password");
+  const user = await User.findOne({ name }).select("+password");
 
   if (!user) {
-    return next(new ErrorHandler("Invalid email or password", 401));
+    return next(new ErrorHandler("Invalid name or password", 401));
   }
 
   const isPasswordMatched = await bcrypt.compare(password, user.password);
 
   if (!isPasswordMatched) {
-    return next(new ErrorHandler("Invalid email or password", 401));
+    return next(new ErrorHandler("Invalid name or password", 401));
   }
 
   sendToken(user, 200, res);
