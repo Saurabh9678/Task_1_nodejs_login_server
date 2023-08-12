@@ -9,7 +9,9 @@ const crypto = require("crypto");
 // Register a User
 exports.registerUser = catchAsyncError(async (req, res, next) => {
   const { name, email, password } = req.body;
-
+  if (name.includes(" ")) {
+    return next(new ErrorHandler("Name cannot contain spaces", 400));
+  }
   const userExist = await User.findOne({ email });
   if (userExist) {
     return next(
