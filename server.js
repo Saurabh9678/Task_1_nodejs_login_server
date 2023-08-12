@@ -19,7 +19,7 @@ connectDataBase();
 const Port = process.env.PORT || 3000;
 
 const server = app.listen(4000, () => {
-  console.log(`Server is running in http://localhost:${Port}`);
+  console.log(`Server is running`);
 });
 
 //Unhandled Promise rejections
