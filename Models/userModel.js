@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 
 
 const userSchema = new mongoose.Schema({
@@ -23,6 +24,12 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpire: Date,
 });
 
+// JWT TOKEN
+userSchema.methods.getJWTToken = function () {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRE,
+  });
+};
 //Generating Password Reset Token
 userSchema.methods.getResetPasswordToken = function () {
   //Generating token
