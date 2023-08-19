@@ -58,16 +58,32 @@ exports.editComment = catchAsyncError(async (req, res, next) => {
 exports.deleteComment = catchAsyncError(async (req, res, next) => {
   const id = req.params.id;
   const commentData = await Comment.findById(id);
+  
   const post = await Post.findById(commentData.postId);
+  if (!post) {
+    return res.status(404).json({
+      success: false,
+      message: "Post not found",
+    });
+  }
+  
   const commentIndex = post.comments.findIndex(
-    (commentid) => commentid.toString() === id.toString()
+    (commentid) => commentid.equals(commentData._id) // Compare ObjectId directly
   );
-  post.comments.splice(commentIndex, 1);
-  await post.save({ validateBeforeSave: false });
-  await Comment.deleteOne({ _id: id });
 
-  res.status(200).json({
-    success: true,
-    message: "Comment deleted",
-  });
+  if (commentIndex >= 0) {
+    post.comments.splice(commentIndex, 1);
+    await post.save({ validateBeforeSave: false });
+    await Comment.deleteOne({ _id: id });
+
+    res.status(200).json({
+      success: true,
+      message: "Comment deleted",
+    });
+  } else {
+    res.status(404).json({
+      success: false,
+      message: "Comment not found",
+    });
+  }
 });
