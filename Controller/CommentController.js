@@ -68,7 +68,7 @@ exports.deleteComment = catchAsyncError(async (req, res, next) => {
   }
   
   const commentIndex = post.comments.findIndex(
-    (commentid) => commentid.equals(commentData._id) // Compare ObjectId directly
+    (commentid) => commentid.equals(commentData._id) 
   );
 
   if (commentIndex >= 0) {
