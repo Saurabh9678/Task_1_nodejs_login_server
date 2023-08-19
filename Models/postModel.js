@@ -18,13 +18,6 @@ const PostSchema = new mongoose.Schema(
       type: String,
       required: [true, "Provide content of your post"],
     },
-    imagesUrl: [
-      {
-        imageUrl: {
-          type: String,
-        },
-      },
-    ],
     likes: [
       {
         type: mongoose.Schema.ObjectId,

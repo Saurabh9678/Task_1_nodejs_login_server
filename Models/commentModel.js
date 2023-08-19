@@ -18,27 +18,9 @@ const CommentSchema = mongoose.Schema(
       type: mongoose.Schema.ObjectId,
       ref: "Post",
     },
-    parentCommentId: {
-      type: mongoose.Schema.ObjectId,
-      ref: "Comment",
-      default:null
-    },
     comment: {
       type: String,
     },
-    likes: [
-      {
-        type: mongoose.Schema.ObjectId,
-        ref: "User",
-      },
-    ],
-    replies: [
-      {
-        type: mongoose.Schema.ObjectId,
-        ref: "Comment",
-        autopopulate: true,
-      },
-    ],
     createdAt: {
       type: Date,
       default: Date.now(),

@@ -28,7 +28,6 @@ exports.commentOnPost = catchAsyncError(async (req, res, next) => {
 
   await post.save({ validateBeforeSave: false });
 
-  
   res.status(200).json({
     success: true,
     data: {
@@ -36,5 +35,39 @@ exports.commentOnPost = catchAsyncError(async (req, res, next) => {
     },
     message: "Added Comment",
     error: "",
+  });
+});
+
+exports.editComment = catchAsyncError(async (req, res, next) => {
+  const id = req.params.id;
+  const { comment } = req.body;
+  const commentData = await Comment.findById(id);
+
+  if (!commentData) {
+    return next(new ErrorHandler("Comment not found", 404));
+  }
+
+  commentData.comment = comment;
+  await commentData.save({ validateBeforeSave: false });
+  res.status(200).json({
+    success: true,
+    data: commentData,
+  });
+});
+
+exports.deleteComment = catchAsyncError(async (req, res, next) => {
+  const id = req.params.id;
+  const commentData = await Comment.findById(id);
+  const post = await Post.findById(commentData.postId);
+  const commentIndex = post.comments.findIndex(
+    (commentid) => commentid.toString() === id.toString()
+  );
+  post.comments.splice(commentIndex, 1);
+  await post.save({ validateBeforeSave: false });
+  await Comment.deleteOne({ _id: id });
+
+  res.status(200).json({
+    success: true,
+    message: "Comment deleted",
   });
 });
