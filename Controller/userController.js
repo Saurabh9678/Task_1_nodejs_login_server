@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const sendToken = require("../utils/jwtToken");
 const sendEmail = require("../utils/sendEmail");
 const crypto = require("crypto");
+const { generateKey } = require("../utils/encryption");
 
 // Register a User
 exports.registerUser = catchAsyncError(async (req, res, next) => {
@@ -125,4 +126,9 @@ exports.resetPassword = catchAsyncError(async (req, res, next) => {
   await user.save({ validateBeforeSave: false });
 
   sendToken(user, 200, res);
+});
+
+exports.getEncryptionKey = catchAsyncError(async (req, res, next) => {
+  const key = generateKey();
+  res.status(200).json({ success: true, key: key });
 });

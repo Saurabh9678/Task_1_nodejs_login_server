@@ -2,21 +2,26 @@ const ErrorHandler = require("../utils/errorhandler");
 const catchAsyncError = require("../middleware/catchAsyncError");
 const Post = require("../Models/postModel");
 const Comment = require("../Models/commentModel");
+const { encryptText, decryptText } = require("../utils/encryption");
 
 exports.createPost = catchAsyncError(async (req, res, next) => {
   const user = req.user;
   const { content } = req.body;
 
   if (!content) return next(new ErrorHandler("Content cannot be empty", 400));
-
+  const encryptionKey = Buffer.from(process.env.ENCRYPTION_KEY, "hex");
+  const cipherContent = encryptText(content, encryptionKey);
   const data = {
     user: {
       id: user._id,
       name: user.name,
     },
-    content,
+    content: {
+      text: cipherContent.ciphertext,
+      iv: cipherContent.iv,
+    },
   };
-  //   console.log(data);
+
   const post = await Post.create(data);
   if (!post) return next(new ErrorHandler("Server Error", 500));
 
@@ -52,10 +57,21 @@ exports.getPosts = catchAsyncError(async (req, res, next) => {
     });
   }
 
-  let finalPost = posts.map((post) => {
+  const decryptedPosts = posts.map((post) => {
+    const decryptedContent = decryptText(
+      post.content.text,
+      Buffer.from(process.env.ENCRYPTION_KEY, "hex"),
+      Buffer.from(post.content.iv, "hex")
+    );
+    return {
+      ...post.toObject(),
+      content: decryptedContent,
+    };
+  });
+
+  let finalPost = decryptedPosts.map((post) => {
     const numberOfLikes = post.likes.length;
     const numberOfComments = post.comments.length;
-
     if (numberOfLikes !== 0) {
       const userIdIndex = post.likes.findIndex(
         (id) => id.toString() === user._id.toString()
@@ -69,13 +85,6 @@ exports.getPosts = catchAsyncError(async (req, res, next) => {
       return { ...post, numberOfLikes, isLiked: false, numberOfComments };
     }
   });
-
-  finalPost = finalPost.map((post) => ({
-    ...post._doc,
-    numberOfLikes: post.numberOfLikes,
-    isLiked: post.isLiked,
-    numberOfComments: post.numberOfComments,
-  }));
 
   return res.status(200).json({
     success: true,
@@ -93,24 +102,44 @@ exports.getPostById = catchAsyncError(async (req, res, next) => {
   const numberOfLikes = post.likes.length;
   const numberOfComments = post.comments.length;
   let finalPost = {};
+
+  const decryptedContent = decryptText(
+    post.content.text,
+    Buffer.from(process.env.ENCRYPTION_KEY, "hex"),
+    Buffer.from(post.content.iv, "hex")
+  );
+
   if (numberOfLikes !== 0) {
     const userIdIndex = post.likes.findIndex(
       (id) => id.toString() === user._id.toString()
     );
     if (userIdIndex !== -1) {
-      finalPost = { ...post, numberOfLikes, isLiked: true, numberOfComments };
+      finalPost = {
+        ...post.toObject(),
+        content: decryptedContent,
+        numberOfLikes,
+        isLiked: true,
+        numberOfComments,
+      };
     } else {
-      finalPost = { ...post, numberOfLikes, isLiked: false, numberOfComments };
+      finalPost = {
+        ...post.toObject(),
+        content: decryptedContent,
+        numberOfLikes,
+        isLiked: false,
+        numberOfComments,
+      };
     }
   } else {
-    finalPost = { ...post, numberOfLikes, isLiked: false, numberOfComments };
+    finalPost = {
+      ...post.toObject(),
+      content: decryptedContent,
+      numberOfLikes,
+      isLiked: false,
+      numberOfComments,
+    };
   }
-  finalPost = {
-    ...finalPost._doc,
-    numberOfLikes: finalPost.numberOfLikes,
-    isLiked: finalPost.isLiked,
-    numberOfComments: finalPost.numberOfComments,
-  };
+
   return res.status(200).json({
     success: true,
     data: finalPost,
@@ -125,13 +154,19 @@ exports.editPost = catchAsyncError(async (req, res, next) => {
 
   if (!post) return next(new ErrorHandler("Post not found", 404));
 
-  post.content = content;
+  const encryptedContent = encryptText(
+    content,
+    Buffer.from(process.env.ENCRYPTION_KEY, "hex")
+  );
+
+  post.content.text = encryptedContent.ciphertext;
+  post.content.iv = encryptedContent.iv;
 
   await post.save({ validateBeforeSave: false });
 
   return res.status(200).json({
     success: true,
-    data: post,
+    data: post.content.text,
   });
 });
 

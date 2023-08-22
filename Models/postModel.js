@@ -15,8 +15,14 @@ const PostSchema = new mongoose.Schema(
       },
     },
     content: {
-      type: String,
-      required: [true, "Provide content of your post"],
+      text: {
+        type: String,
+        required: [true, "Provide content of your post"],
+      },
+      iv: {
+        type: String,
+        required: true,
+      },
     },
     likes: [
       {
@@ -46,5 +52,3 @@ const PostSchema = new mongoose.Schema(
 PostSchema.plugin(autopopulate);
 
 module.exports = mongoose.model("Post", PostSchema);
-
-
